@@ -1,0 +1,93 @@
+service: gretel-s3-proxy-demo
+
+provider:
+  name: aws
+  region: ${opt:region, "us-east-2"}
+  lambdaHashingVersion: 20201221
+  ecr:
+    images:
+      greteltransforms:
+        path: ./
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - "s3-object-lambda:WriteGetObjectResponse"
+            - "s3-object-lambda:Get*"
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - "lambda:InvokeFunction"
+          Resource: arn:aws:lambda:${self:provider.region}:*:function:${self:service}-${opt:stage, "dev"}-greteltransform
+        - Effect: Allow
+          Action:
+            - "s3:GetObject"
+            - "s3:ListBucket"  # so we can get a 404 for missing keys
+          Resource:
+            # TODO: figure out the specific resources, being more specific here causes access denied issues.
+            # Really confusing since these 4 resources are the ONLY S3 ones associated with this stack.
+            # - arn:aws:s3:::${self:custom.bucketName}
+            # - arn:aws:s3:::${self:custom.bucketName}/*
+            # - arn:aws:s3:${self:provider.region}:*:accesspoint/${self:custom.bucketApName}
+            # - arn:aws:s3-object-lambda:${self:provider.region}:*:accesspoint/${self:custom.olapName}
+            - "*"
+
+custom:
+  baseName: gretel-transform-share
+  bucketName: ${self:custom.baseName}-${self:provider.region}
+  bucketApName: ${self:custom.baseName}-ap-${self:provider.region}
+  olapName: ${self:custom.baseName}-olap-${self:provider.region}
+
+
+functions:
+  greteltransform:
+    image:
+      name: greteltransforms
+  gretelshare:
+    image:
+      name: greteltransforms
+      command: "handler.get_sharing_url"
+      entryPoint: "/lambda-entrypoint.sh"
+    events:
+      - http:
+          path: /share
+          method: get
+    environment:
+      OLAP_BUCKET: !GetAtt lambdaAccessPoint.Arn
+
+resources:
+  Resources:
+    bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName}
+        BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: AES256
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+
+    bucketAccessPoint:
+      Type: AWS::S3::AccessPoint
+      Properties:
+        Bucket: !Ref bucket
+        Name: ${self:custom.bucketApName}
+
+    lambdaAccessPoint:
+      Type: AWS::S3ObjectLambda::AccessPoint
+      Properties:
+        Name: ${self:custom.olapName}
+        ObjectLambdaConfiguration:
+          CloudWatchMetricsEnabled: true
+          SupportingAccessPoint: !Sub arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${self:custom.bucketApName}
+
+          TransformationConfigurations:
+            - Actions: ['GetObject']
+              ContentTransformation:
+                AwsLambda:
+                  FunctionArn: !GetAtt GreteltransformLambdaFunction.Arn
