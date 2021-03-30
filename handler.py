@@ -1,5 +1,5 @@
 """
-Example AWS Lambda Handler for transforming
+Example AWS Lambda Handlers for transforming
 records with Gretel Open Source Transforms.
 """
 import io
@@ -21,7 +21,8 @@ from gretel_client.transformers import (
     StringMask,
 )
 
-# Hack to get the latest version of boto3
+# Hack to get the latest version of boto3, which is required
+# to use S3 Object Lambda
 sys.path.insert(0, Path(__file__).parent.as_posix())
 
 

@@ -34,7 +34,11 @@ provider:
             - "*"
 
 custom:
+  # NOTE: change this value to something else to deploy it in 
+  # your own environment
   baseName: gretel-transform-share
+
+  # set automatically based on the base name
   bucketName: ${self:custom.baseName}-${self:provider.region}
   bucketApName: ${self:custom.baseName}-ap-${self:provider.region}
   olapName: ${self:custom.baseName}-olap-${self:provider.region}
