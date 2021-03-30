@@ -35,3 +35,12 @@ $ sls deploy
 You'll need to upload the sample CSV data to the bucket that gets created.
 
 When you get back the endpoints from the `Service Information` output, you should be able to issue a `GET /dev/share?key=2021-03-22.csv`.
+
+
+
+
+# Resources
+
+- https://aws.amazon.com/blogs/aws/introducing-amazon-s3-object-lambda-use-your-code-to-process-data-as-it-is-being-retrieved-from-s3/
+- https://www.serverless.com/blog/container-support-for-lambda
+- https://github.com/eoinsha/object-lambda-transform/blob/master/serverless.yml
