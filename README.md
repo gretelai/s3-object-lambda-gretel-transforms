@@ -1,3 +1,7 @@
+# !!! Deprecated !!!
+
+This repo is archived and the contents should only be considered a reference. The code may not function based on changes to dependencies or Gretel's service.
+
 # Anonymize Data with S3 Object Lambda and Gretel Transforms
 
 This repo demonstrates how to launch a simple AWS stack that anonymizes S3 object data at access time using S3 Object Lambdas.
